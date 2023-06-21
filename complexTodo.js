@@ -1,4 +1,5 @@
-const createTodoElement = (todo) => {
+let isChecked = false;
+const createTodoElement = (todo, params) => {
   if (!todo) return null;
 
   // find template
@@ -22,9 +23,13 @@ const createTodoElement = (todo) => {
   const titleElement = todoElement.querySelector('.todo__title');
   if (titleElement) titleElement.textContent = todo.content;
 
+  todoElement.hidden = !isMatch(todoElement, params);
+
   // TODO: attach events for buttons
   // attach event for mark-as-done button
   const markAsDoneButton = todoElement.querySelector('button.mark-as-done');
+  const btnColor = todo.status === 'pending' ? 'btn-dark' : 'btn-success';
+  markAsDoneButton.classList.add(btnColor);
   if (markAsDoneButton)
     markAsDoneButton.addEventListener('click', () => {
       console.log('done');
@@ -65,16 +70,33 @@ const createTodoElement = (todo) => {
     });
 
   // attach event for edit button
-  const editButton = document.querySelector('button.edit');
+  const editButton = todoElement.querySelector('button.edit');
   if (editButton) {
     editButton.addEventListener('click', () => {
+      const checkBoxContain = document.getElementById('checkBoxContain');
+      checkBoxContain.classList.remove('hide');
       const todoList = getTodoList();
       const lastestTodo = todoList.find((x) => x.id === todo.id);
+      const checkBoxElement = document.getElementById('todoCheckBox');
+      if (!checkBoxElement) return;
+      checkBoxElement.checked = todoElement.dataset.status === 'completed' ? true : false;
+
       if (!lastestTodo) return;
       // populate data to todo form
       populateTodoForm(lastestTodo);
     });
   }
+
+  const checkBoxElement = document.getElementById('todoCheckBox');
+  if (!checkBoxElement) return;
+
+  checkBoxElement.addEventListener('change', (e) => {
+    if (e.target.checked) {
+      isChecked = true;
+    } else {
+      isChecked = false;
+    }
+  });
   return todoElement;
 };
 
@@ -85,7 +107,6 @@ const populateTodoForm = (todo) => {
   if (!todoForm) return;
 
   todoForm.dataset.id = todo.id;
-  console.log('fdsa');
 
   // set value for form controls
   // set todoText
@@ -94,14 +115,14 @@ const populateTodoForm = (todo) => {
   todoInput.value = todo.content;
 };
 
-const renderTodoList = (todoList, id) => {
+const renderTodoList = (todoList, id, params) => {
   if (!Array.isArray(todoList) || todoList.length === 0) return;
 
   const ulElement = document.getElementById(id);
 
   if (ulElement) {
     for (const todo of todoList) {
-      const liElement = createTodoElement(todo);
+      const liElement = createTodoElement(todo, params);
 
       ulElement.appendChild(liElement);
     }
@@ -137,14 +158,25 @@ function handleTodoFormSubmit(event) {
     // update content
     todoList[index].content = todoInput.value;
 
+    todoList[index].status = isChecked ? 'completed' : 'pending';
+
     // save
     localStorage.setItem('todo_list', JSON.stringify(todoList));
 
     // apply dom
     const liElemet = document.querySelector(`ul#todoList > li[data-id="${todoForm.dataset.id}"]`);
     if (liElemet) {
+      liElemet.dataset.status = isChecked ? 'completed' : 'pending';
       const titleElement = liElemet.querySelector('.todo__title');
       if (titleElement) titleElement.textContent = todoInput.value;
+      const backgroundElemet = isChecked ? 'alert-success' : 'alert-secondary';
+      const divElement = liElemet.querySelector('div.todo');
+      divElement.classList.remove('alert-success', 'alert-secondary');
+      divElement.classList.add(backgroundElemet);
+      const btnColor = isChecked ? 'btn-success' : 'btn-dark';
+      const btnElement = liElemet.querySelector('.mark-as-done');
+      btnElement.classList.remove('btn-success', 'btn-dark');
+      btnElement.classList.add(btnColor);
     }
   } else {
     const newTodo = {
@@ -169,7 +201,75 @@ function handleTodoFormSubmit(event) {
   // reset form
   delete todoForm.dataset.id;
   todoForm.reset();
+  const checkBoxContain = document.getElementById('checkBoxContain');
+  checkBoxContain.classList.add('hide');
 }
+
+const isMatchSearch = (liElement, searchTerm) => {
+  if (!liElement) return false;
+  // searchTerm === empty ---> show all
+  // searchTerm !== empty ---> filter
+  if (searchTerm === '') return true;
+
+  const titleElement = liElement.querySelector('p.todo__title');
+  if (!titleElement) return false;
+
+  return titleElement.textContent.toLowerCase().includes(searchTerm.toLowerCase());
+};
+
+const isMatchStatus = (liElement, filterStatus) => {
+  return filterStatus === 'all' || liElement.dataset.status === filterStatus;
+};
+
+const isMatch = (liElement, params) => {
+  return (
+    isMatchStatus(liElement, params.get('status')) &&
+    isMatchSearch(liElement, params.get('searchTerm'))
+  );
+};
+
+const initSearchInput = (params) => {
+  const searchTerm = document.getElementById('searchTerm');
+  if (!searchTerm) return;
+
+  if (params.get('searchTerm')) {
+    searchTerm.value = params.get('searchTerm');
+  }
+
+  searchTerm.addEventListener('input', (e) => {
+    // console.log('change', e.target.value);
+    // searchTodo(searchTerm.value);
+    handleFilterChange('searchTerm', searchTerm.value);
+  });
+};
+
+const initFilterStatus = (params) => {
+  // find select
+  const filterStatusSelect = document.querySelector('#filterStatus');
+  if (!filterStatusSelect) return;
+
+  if (params.get('status')) {
+    filterStatusSelect.value = params.get('status');
+  }
+  // attach event change
+  filterStatusSelect.addEventListener('change', (e) => {
+    // filterTodo(filterStatusSelect.value);
+    handleFilterChange('status', filterStatusSelect.value);
+  });
+};
+
+const handleFilterChange = (filterName, filterValue) => {
+  const url = new URL(window.location);
+  url.searchParams.set(filterName, filterValue);
+  history.pushState({}, '', url);
+
+  const todeElementList = document.querySelectorAll('#todoList > li');
+
+  for (const todo of todeElementList) {
+    const needToShow = isMatch(todo, url.searchParams);
+    todo.hidden = !needToShow;
+  }
+};
 
 // main
 (() => {
@@ -193,12 +293,18 @@ function handleTodoFormSubmit(event) {
   //     },
   //   ])
   // );
+
+  const params = new URLSearchParams(window.location.search);
+
   const todoList = getTodoList();
-  renderTodoList(todoList, 'todoList');
+  renderTodoList(todoList, 'todoList', params);
 
   // register submit event for todo form
   const todoForm = document.getElementById('todoFormId');
   if (todoForm) {
     todoForm.addEventListener('submit', handleTodoFormSubmit);
   }
+
+  initSearchInput(params);
+  initFilterStatus(params);
 })();

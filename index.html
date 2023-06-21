@@ -11,11 +11,35 @@
       crossorigin="anonymous"
     />
     <link rel="stylesheet" href="./style.css" />
+    <style>
+      .hide {
+        display: none;
+      }
+    </style>
   </head>
   <body>
     <section class="my-4">
       <div class="container">
         <h1>Todo list</h1>
+
+        <div class="input-group mb-3">
+          <div class="input-group-prepend">
+            <span class="input-group-text" id="searchTermSpan">Search</span>
+          </div>
+          <input
+            id="searchTerm"
+            type="text"
+            class="form-control"
+            aria-label="Username"
+            aria-describedby="searchTermSpan"
+          />
+        </div>
+
+        <select id="filterStatus" class="form-select mb-3" aria-label="Default select example">
+          <option selected value="all">All</option>
+          <option value="pending">Pending</option>
+          <option value="completed">Completed</option>
+        </select>
 
         <ul id="todoList" class="todo-list"></ul>
       </div>
@@ -28,7 +52,7 @@
           <div class="d-flex justify-content-between align-items-center">
             <p class="todo__title mb-0">TODO TITLE</p>
             <div class="todo__actions">
-              <button class="btn btn-sm btn-success mark-as-done" type="button">Finish</button>
+              <button class="btn btn-sm mark-as-done" type="button">Finish</button>
               <button class="btn btn-sm btn-primary edit" type="button">Edit</button>
               <button class="btn btn-sm btn-danger remove" type="button">Remove</button>
             </div>
@@ -42,8 +66,11 @@
       <div class="container">
         <form id="todoFormId">
           <div class="mb-3">
-            <label for="todoText" class="form-label">Todo</label>
+            <label for="todoText" class="form-label">Create todo</label>
             <input name="todoText" type="text" class="form-control" id="todoText" />
+            <div class="hide" id="checkBoxContain">
+              <input type="checkbox" id="todoCheckBox" /> Finish
+            </div>
           </div>
           <button type="submit" class="btn btn-primary">Submit</button>
         </form>
