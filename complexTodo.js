@@ -302,6 +302,13 @@ const handleFilterChange = (filterName, filterValue) => {
 
   const params = new URLSearchParams(window.location.search);
 
+  const url = new URL(window.location.href);
+
+  url.searchParams.set('status', params.get('status') ? params.get('status') : 'all');
+  url.searchParams.set('searchTerm', params.get('searchTerm') ? params.get('searchTerm') : '');
+
+  history.pushState({}, '', url);
+
   const todoList = getTodoList();
   renderTodoList(todoList, 'todoList', params);
 
