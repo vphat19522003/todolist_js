@@ -24,6 +24,7 @@ const createTodoElement = (todo, params) => {
   if (titleElement) titleElement.textContent = todo.content;
 
   todoElement.hidden = !isMatch(todoElement, params);
+  console.log(todoElement.hidden);
 
   // TODO: attach events for buttons
   // attach event for mark-as-done button
@@ -193,6 +194,7 @@ function handleTodoFormSubmit(event) {
     // apply DOM
     const ulElement = document.getElementById('todoList');
     const liElement = createTodoElement(newTodo);
+
     if (ulElement) {
       ulElement.appendChild(liElement);
     }
@@ -207,8 +209,10 @@ function handleTodoFormSubmit(event) {
 
 const isMatchSearch = (liElement, searchTerm) => {
   if (!liElement) return false;
+
   // searchTerm === empty ---> show all
   // searchTerm !== empty ---> filter
+
   if (searchTerm === '') return true;
 
   const titleElement = liElement.querySelector('p.todo__title');
@@ -222,9 +226,11 @@ const isMatchStatus = (liElement, filterStatus) => {
 };
 
 const isMatch = (liElement, params) => {
+  const url = new URL(window.location.href);
+
   return (
-    isMatchStatus(liElement, params.get('status')) &&
-    isMatchSearch(liElement, params.get('searchTerm'))
+    isMatchStatus(liElement, url.searchParams.get('status')) &&
+    isMatchSearch(liElement, url.searchParams.get('searchTerm'))
   );
 };
 
@@ -259,7 +265,7 @@ const initFilterStatus = (params) => {
 };
 
 const handleFilterChange = (filterName, filterValue) => {
-  const url = new URL(window.location);
+  const url = new URL(window.location.href);
   url.searchParams.set(filterName, filterValue);
   history.pushState({}, '', url);
 
