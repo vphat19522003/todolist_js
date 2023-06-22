@@ -24,7 +24,6 @@ const createTodoElement = (todo, params) => {
   if (titleElement) titleElement.textContent = todo.content;
 
   todoElement.hidden = !isMatch(todoElement, params);
-  console.log(todoElement.hidden);
 
   // TODO: attach events for buttons
   // attach event for mark-as-done button
@@ -68,6 +67,19 @@ const createTodoElement = (todo, params) => {
       localStorage.setItem('todo_list', JSON.stringify(newTodoList));
 
       todoElement.remove();
+
+      const ulElement = document.getElementById('todoList');
+
+      const liElementList = ulElement.querySelectorAll('li');
+      let heightSum = 0;
+      for (const li of liElementList) {
+        heightSum += li.offsetHeight;
+      }
+      console.log(heightSum);
+      if (heightSum < 323) {
+        ulElement.classList.remove('scrollItem');
+        ulElement.offsetHeight = '0px';
+      }
     });
 
   // attach event for edit button
@@ -197,6 +209,9 @@ function handleTodoFormSubmit(event) {
 
     if (ulElement) {
       ulElement.appendChild(liElement);
+      if (ulElement.offsetHeight > 323) {
+        ulElement.classList.add('scrollItem');
+      }
     }
   }
 
@@ -320,4 +335,12 @@ const handleFilterChange = (filterName, filterValue) => {
 
   initSearchInput(params);
   initFilterStatus(params);
+
+  const ulElement = document.getElementById('todoList');
+
+  if (ulElement) {
+    if (ulElement.offsetHeight > 323) {
+      ulElement.classList.add('scrollItem');
+    }
+  }
 })();
